@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Invoco — Free Time Tracker & Invoice Generator | AND.CO Replacement</title>
 <meta name="description" content="Invoco replaces AND.CO: free time tracker, client management, and invoice generator for freelancers — all in one HTML file. No account needed. Works offline.">
+<meta property="og:title" content="Invoco — Free Freelancer Time Tracker & Invoice Generator">
+<meta property="og:description" content="AND.CO replacement in a single HTML file. Track time, send invoices, manage clients. No signup. Works offline. Free forever.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://selfloom.github.io/invoco-demo/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Invoco — Free Freelancer Time Tracker & Invoice Generator">
+<meta name="twitter:description" content="AND.CO replacement in a single HTML file. No account needed. Works offline. Free forever.">
+<link rel="canonical" href="https://selfloom.github.io/invoco-demo/">
 <style>
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -227,6 +235,25 @@ input{font-family:inherit;font-size:inherit}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
 .demo-blinking{animation:pulse 1.5s ease infinite}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Invoco",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any",
+  "description": "Free time tracker and invoice generator for freelancers — AND.CO replacement in a single HTML file. No account needed. Works offline.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "Selfloom"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -544,6 +571,9 @@ input{font-family:inherit;font-size:inherit}
       <a href="#demo">Demo</a>
     </div>
     <p class="footer-legal">Built by <strong>Selfloom</strong>. No account required. Your data stays on your device. No tracking. No cloud.</p>
+    <div style="text-align:center;margin:8px 0;opacity:0.7">
+      <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fselfloom.github.io%2Finvoco-demo%2F&count_bg=%23312e81&title_bg=%231e293b&icon=&icon_color=%2394a3b8&title=views&edge_flat=false" alt="page views" style="display:inline-block" loading="lazy">
+    </div>
   </div>
 </footer>
 
@@ -581,6 +611,14 @@ function submitWaitlist() {
   document.getElementById('pricingWaitlist').style.display = 'none';
   document.getElementById('pricingSuccess').style.display = 'block';
 }
+</script>
+
+<script>
+(function(){
+  var d=document.referrer||'direct';
+  var s=screen.width+'x'+screen.height;
+  new Image().src='https://api.countapi.xyz/hit/selfloom.github.io/invoco-demo/visits?ref='+encodeURIComponent(d)+'&res='+s;
+})();
 </script>
 
 </body>
