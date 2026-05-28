@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoco — Freelancer Time Tracker &amp; Invoice Generator</title>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.6;min-height:100vh}
+button{cursor:pointer;font-family:inherit;font-size:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit}
+:root{
+  --bg:#0f172a;--bg-card:#1e293b;--bg-input:#334155;--border:#475569;
+  --text:#f1f5f9;--text-muted:#94a3b8;--text-dim:#64748b;
+  --primary:#818cf8;--primary-hover:#a5b4fc;--primary-bg:#312e81;
+  --success:#34d399;--danger:#f87171;--warning:#fbbf24;
+  --radius:10px;--radius-sm:6px;
+}
+
+/* ===== LAYOUT ===== */
+.app{max-width:900px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.logo{font-size:1.6rem;font-weight:800;letter-spacing:-0.5px;color:var(--text)}
+.logo span{color:var(--primary)}
+nav{display:flex;gap:4px;background:var(--bg-card);border-radius:var(--radius);padding:4px}
+nav button{padding:8px 16px;border:none;background:transparent;color:var(--text-muted);border-radius:var(--radius-sm);font-weight:500;transition:all .15s;white-space:nowrap}
+nav button:hover{color:var(--text)}
+nav button.active{background:var(--primary);color:#fff}
+
+/* ===== CARDS & SECTIONS ===== */
+.card{background:var(--bg-card);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card-title{font-size:1.1rem;font-weight:600;margin-bottom:16px;color:var(--text)}
+.section-label{font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px}
+
+/* ===== TIMER ===== */
+.timer-display{font-size:4.5rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;font-family:'SF Mono','Cascadia Code','Consolas',monospace;color:var(--text);padding:24px 0;letter-spacing:2px}
+.timer-display.running{color:var(--success)}
+.timer-controls{display:flex;justify-content:center;gap:12px;margin-bottom:20px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-weight:600;transition:all .15s;gap:6px}
+.btn-lg{padding:14px 36px;font-size:1.1rem;border-radius:var(--radius)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-success{background:#059669;color:#fff}
+.btn-success:hover{background:#10b981}
+.btn-danger{background:#b91c1c;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-muted)}
+.btn-outline:hover{background:var(--bg-input);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:0.85rem}
+.btn-icon{padding:6px 8px;min-width:32px}
+
+.timer-meta{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.timer-meta select,.timer-meta input{flex:1;min-width:150px;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)}
+.timer-meta select:focus,.timer-meta input:focus{outline:none;border-color:var(--primary)}
+.timer-meta input::placeholder{color:var(--text-dim)}
+
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.9rem}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* ===== FORMS ===== */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:0.85rem;font-weight:500;color:var(--text-muted);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+
+/* ===== INVOICE PREVIEW ===== */
+.invoice-preview{background:#fff;color:#1e293b;border-radius:var(--radius);padding:40px;margin-top:20px;box-shadow:0 4px 24px rgba(0,0,0,0.3)}
+.invoice-preview h2{font-size:1.8rem;font-weight:800;letter-spacing:1px;margin-bottom:24px;color:#1e293b}
+.invoice-meta{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.invoice-meta .col .label{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:4px}
+.invoice-meta .col .value{font-size:0.95rem;color:#334155;line-height:1.5}
+.invoice-table{width:100%;border-collapse:collapse;margin:24px 0}
+.invoice-table th{background:#f1f5f9;color:#475569;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;padding:12px;text-align:left;border-bottom:2px solid #e2e8f0}
+.invoice-table td{padding:12px;border-bottom:1px solid #e2e8f0;color:#334155}
+.invoice-table .num{text-align:right}
+.invoice-totals{margin-left:auto;width:280px}
+.invoice-totals .row{display:flex;justify-content:space-between;padding:6px 0;font-size:0.95rem;color:#475569}
+.invoice-totals .row.total{font-weight:700;font-size:1.15rem;color:#1e293b;border-top:2px solid #e2e8f0;padding-top:10px;margin-top:4px}
+.invoice-notes{margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:0.9rem;color:#64748b}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--bg-card);border-radius:var(--radius);padding:24px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+.modal h3{margin-bottom:16px}
+
+/* ===== MISC ===== */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-dim)}
+.empty-state p{margin-bottom:12px}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:500;background:var(--primary-bg);color:var(--primary)}
+.flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.mt-12{margin-top:12px}
+.mb-12{margin-bottom:12px}
+.check-label{display:flex;align-items:center;gap:8px;font-size:0.9rem;cursor:pointer}
+.check-label input[type="checkbox"]{width:18px;height:18px;accent-color:var(--primary)}
+.confirm-dialog{background:#7f1d1d;border:1px solid var(--danger);border-radius:var(--radius);padding:16px;margin-top:12px}
+.confirm-dialog p{margin-bottom:12px;color:#fca5a5}
+.confirm-dialog .btns{display:flex;gap:8px}
+
+/* ===== COLORS FOR STATUS ===== */
+.status-open{color:var(--success)}
+.status-paid{color:var(--primary)}
+.text-mono{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:0.85rem}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg-card);border:1px solid var(--border);padding:12px 20px;border-radius:var(--radius-sm);font-size:0.9rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:200;animation:slideUp .3s ease;max-width:360px}
+.toast.success{border-color:var(--success)}
+.toast.error{border-color:var(--danger)}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px){
+  .app{padding:10px}
+  .timer-display{font-size:3rem}
+  nav button{padding:8px 10px;font-size:0.85rem}
+  .card{padding:16px}
+  .invoice-preview{padding:24px}
+  .invoice-meta{grid-template-columns:1fr}
+  .invoice-totals{width:100%}
+}
+
+/* ===== PRINT ===== */
+@media print{
+  body{background:#fff;color:#000;font-size:11pt}
+  header,nav,.timer-display,.timer-controls,.timer-meta,.btn,.no-print,.card-title,.empty-state,.modal-overlay,.toast,.invoice-controls{display:none!important}
+  .app{max-width:100%;padding:0;margin:0}
+  .card{background:#fff;padding:0;margin:0;box-shadow:none}
+  .invoice-preview{box-shadow:none;padding:0;border-radius:0;margin:0}
+  .invoice-preview h2{font-size:20pt}
+  .invoice-table th{background:#f8fafc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:20mm}
+}
+
+/* ===== UPGRADE BANNER ===== */
+.upgrade-banner{background:linear-gradient(135deg,#312e81,#4338ca);border:1px solid #6366f1;border-radius:var(--radius);padding:20px 24px;margin-bottom:20px;display:none}
+.upgrade-banner.show{display:block}
+.upgrade-banner h3{color:#fff;font-size:1.05rem;margin-bottom:6px}
+.upgrade-banner p{color:#c7d2fe;font-size:0.9rem;margin-bottom:12px}
+.upgrade-banner .upgrade-features{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.upgrade-banner .upgrade-features span{color:#a5b4fc;font-size:0.82rem;display:flex;align-items:center;gap:4px}
+.upgrade-banner .upgrade-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-upgrade{background:#fff;color:#312e81;padding:10px 24px;border:none;border-radius:var(--radius-sm);font-weight:700;font-size:0.95rem;transition:all .15s}
+.btn-upgrade:hover{background:#e0e7ff;transform:translateY(-1px)}
+.waitlist-form{display:none;margin-top:6px}
+.waitlist-form.show{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.waitlist-form input[type=email]{padding:10px 14px;border:1px solid #818cf8;border-radius:var(--radius-sm);background:rgba(255,255,255,0.1);color:#fff;font-size:0.9rem;min-width:220px;outline:none}
+.waitlist-form input[type=email]::placeholder{color:#a5b4fc;opacity:0.6}
+.waitlist-form input[type=email]:focus{border-color:#fff;background:rgba(255,255,255,0.15)}
+.waitlist-form .btn-waitlist{background:#fff;color:#312e81;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-weight:700;font-size:0.9rem;cursor:pointer;transition:all .15s}
+.waitlist-form .btn-waitlist:hover{background:#e0e7ff}
+.waitlist-success{display:none;color:#a5b4fc;font-size:0.85rem;margin-top:8px}
+.waitlist-success.show{display:block}
+
+/* ===== FOOTER ===== */
+.app-footer{text-align:center;padding:24px 0 8px;border-top:1px solid var(--border);margin-top:32px}
+.app-footer p{color:var(--text-dim);font-size:0.8rem;margin-bottom:6px}
+.footer-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.footer-links a,.footer-links span{color:var(--text-muted);font-size:0.78rem;text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--primary)}
+.footer-sep{color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">INV<span>◌</span>CO</div>
+    <nav>
+      <button data-tab="timer" class="active">Timer</button>
+      <button data-tab="clients">Clients</button>
+      <button data-tab="invoices">Invoices</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <!-- TAB: TIMER -->
+  <div id="tab-timer" class="tab-content">
+    <div class="card">
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+      <div class="timer-controls">
+        <button class="btn btn-lg btn-success" id="btnStart" onclick="Timer.start()">Start</button>
+        <button class="btn btn-lg btn-danger" id="btnStop" onclick="Timer.stop()" disabled>Stop</button>
+      </div>
+      <div class="timer-meta">
+        <select id="timerClient" onchange="Timer.setClient(this.value)">
+          <option value="">No client selected</option>
+        </select>
+        <input type="text" id="timerNotes" placeholder="What are you working on?" oninput="Timer.setNotes(this.value)">
+      </div>
+    </div>
+
+    <div class="card no-print">
+      <div class="flex-between mb-12">
+        <div class="card-title">Recent Time Entries</div>
+        <button class="btn btn-outline btn-sm" onclick="TimeEntries.showAddManual()">+ Add Manual Entry</button>
+      </div>
+      <div class="table-wrap" id="timeEntriesList"></div>
+    </div>
+  </div>
+
+  <!-- TAB: CLIENTS -->
+  <div id="tab-clients" class="tab-content" style="display:none">
+    <div class="flex-between mb-12">
+      <div class="card-title" style="margin:0">Clients</div>
+      <button class="btn btn-primary btn-sm" onclick="Clients.showForm()">+ Add Client</button>
+    </div>
+    <div id="clientsList"></div>
+  </div>
+
+  <!-- TAB: INVOICES -->
+  <div id="tab-invoices" class="tab-content" style="display:none">
+    <div class="card no-print" id="invoiceBuilder">
+      <div class="card-title">New Invoice</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Client</label>
+          <select id="invClient" onchange="Invoices.onClientChange()">
+            <option value="">Select a client</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Invoice Date</label>
+          <input type="date" id="invDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="invDueDate">
+        </div>
+        <div class="form-group">
+          <label>Invoice Number</label>
+          <input type="text" id="invNumber" readonly style="background:var(--bg);color:var(--text-dim)">
+        </div>
+      </div>
+      <div class="section-label mt-12">Unbilled Time Entries</div>
+      <div id="invTimeEntries" class="mb-12"></div>
+      <div class="section-label">Additional Line Items</div>
+      <div id="invLineItems"></div>
+      <button class="btn btn-outline btn-sm mt-12" onclick="Invoices.addLineItem()">+ Add Line Item</button>
+      <div class="invoice-totals mt-12" style="width:280px;color:var(--text)">
+        <div class="row"><span>Subtotal</span><span id="invSubtotal">$0.00</span></div>
+        <div class="row"><span>Tax (<span id="invTaxRate">0</span>%)</span><span id="invTax">$0.00</span></div>
+        <div class="row total" style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><span>Total</span><span id="invTotal">$0.00</span></div>
+      </div>
+      <div class="form-group mt-12">
+        <label>Notes / Payment Terms</label>
+        <textarea id="invNotes" placeholder="Payment due within 30 days. Please include invoice number with payment."></textarea>
+      </div>
+      <div class="invoice-controls" style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-primary" onclick="Invoices.generate()">Generate Invoice</button>
+        <button class="btn btn-outline btn-sm" onclick="Invoices.clearForm()">Clear</button>
+      </div>
+    </div>
+    <div id="invoicePreview"></div>
+    <div class="card no-print mt-12">
+      <div class="card-title">Invoice History</div>
+      <div class="table-wrap" id="invoiceHistory"></div>
+    </div>
+  </div>
+
+  <!-- TAB: SETTINGS -->
+  <div id="tab-settings" class="tab-content" style="display:none">
+    <div class="card">
+      <div class="card-title">Your Business Info</div>
+      <div class="form-row">
+        <div class="form-group"><label>Business Name</label><input type="text" id="setBizName" onchange="Settings.save()"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="setEmail" onchange="Settings.save()"></div>
+      </div>
+      <div class="form-group"><label>Address</label><textarea id="setAddress" onchange="Settings.save()" rows="2"></textarea></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Invoice Defaults</div>
+      <div class="form-row">
+        <div class="form-group"><label>Tax Rate (%)</label><input type="number" id="setTaxRate" min="0" max="100" step="0.01" onchange="Settings.save()"></div>
+        <div class="form-group"><label>Currency Symbol</label><input type="text" id="setCurrency" maxlength="5" onchange="Settings.save()"></div>
+      </div>
+      <div class="form-group"><label>Default Payment Terms</label><textarea id="setTerms" onchange="Settings.save()" rows="2"></textarea></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Data Management</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="DataManager.exportData()">Export All Data (JSON)</button>
+        <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">Import Data (JSON)</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="DataManager.importData(event)">
+      </div>
+      <div class="mt-12">
+        <button class="btn btn-outline btn-sm" onclick="DataManager.showClearConfirm()" style="color:var(--danger);border-color:var(--danger)">Clear All Data</button>
+        <div id="clearConfirm" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card" id="leadsCard">
+      <div class="card-title">Waitlist Leads (<span id="leadCount">0</span>)</div>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:12px">Emails collected at the upgrade wall. Export CSV when payment is live.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="Monetization.exportLeads()">Export Leads (CSV)</button>
+        <button class="btn btn-outline btn-sm" onclick="if(confirm('Clear all leads?')){localStorage.removeItem('invoco_leads');localStorage.removeItem('invoco_waitlist_submitted');Monetization.syncWaitlistUI();Toast.show('Leads cleared','success');}">Clear Leads</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPGRADE BANNER (shown after free tier limit reached) -->
+  <div class="upgrade-banner" id="upgradeBanner">
+    <h3>You've hit the free tier limit</h3>
+    <p>3 free invoices per month. You've used all 3 this month. Upgrade to Pro for unlimited invoices and more.</p>
+    <div class="upgrade-features">
+      <span>&check; Unlimited invoices</span>
+      <span>&check; Bulk time editing</span>
+      <span>&check; Custom invoice templates</span>
+      <span>&check; Priority support</span>
+    </div>
+    <div class="upgrade-actions" id="upgradeActions">
+      <button class="btn-upgrade" id="upgradeBtn" onclick="Monetization.openCheckout()">Upgrade to Pro — $8/mo</button>
+      <span style="color:#a5b4fc;font-size:0.8rem">Cancel anytime. 7-day free trial.</span>
+      <div class="waitlist-form" id="waitlistForm">
+        <input type="email" id="waitlistEmail" placeholder="your@email.com" autocomplete="email">
+        <button class="btn-waitlist" onclick="Monetization.submitWaitlist()">Notify me when Pro launches</button>
+      </div>
+      <div class="waitlist-success" id="waitlistSuccess">You're on the list! We'll email you as soon as Pro is ready.</div>
+    </div>
+  </div>
+
+  <!-- SUPPORT INVoco (crypto donations — zero KYC) -->
+  <div class="card support-card" id="supportCard" style="margin-top:16px">
+    <div class="card-title" style="display:flex;align-items:center;gap:8px">
+      <span>&#9749;</span> Support Invoco
+      <span style="font-size:0.75rem;font-weight:400;color:var(--text-dim);margin-left:auto">Optional &mdash; Invoco stays free forever</span>
+    </div>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:12px">
+      If Invoco saves you time, consider sending a tip. Every coffee helps keep this tool independent and ad-free.
+      <strong>No account needed &mdash; send directly from your wallet.</strong>
+    </p>
+    <div class="crypto-grid" style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="crypto-item" style="flex:1;min-width:200px;background:var(--bg-input);border-radius:var(--radius-sm);padding:14px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="font-size:1.1rem">&#8383;</span>
+          <strong style="color:var(--text);font-size:0.9rem">Bitcoin (BTC)</strong>
+        </div>
+        <code style="display:block;word-break:break-all;font-size:0.72rem;color:var(--text-muted);background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;user-select:all">bc1qselfloom7invocodemo000000000000000000000</code>
+        <button class="btn btn-sm btn-outline copy-crypto" data-addr="bc1qselfloom7invocodemo000000000000000000000" style="width:100%">Copy Address</button>
+        <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;text-align:center">Replace with real wallet address</p>
+      </div>
+      <div class="crypto-item" style="flex:1;min-width:200px;background:var(--bg-input);border-radius:var(--radius-sm);padding:14px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="font-size:1.1rem">&#9830;</span>
+          <strong style="color:var(--text);font-size:0.9rem">Ethereum (ETH)</strong>
+        </div>
+        <code style="display:block;word-break:break-all;font-size:0.72rem;color:var(--text-muted);background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;user-select:all">0xSelfloomInvocoDonationAddress000000000000</code>
+        <button class="btn btn-sm btn-outline copy-crypto" data-addr="0xSelfloomInvocoDonationAddress000000000000" style="width:100%">Copy Address</button>
+        <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;text-align:center">Replace with real wallet address</p>
+      </div>
+      <div class="crypto-item" style="flex:1;min-width:200px;background:var(--bg-input);border-radius:var(--radius-sm);padding:14px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="font-size:1.1rem">&#9731;</span>
+          <strong style="color:var(--text);font-size:0.9rem">Solana (SOL)</strong>
+        </div>
+        <code style="display:block;word-break:break-all;font-size:0.72rem;color:var(--text-muted);background:var(--bg);padding:8px;border-radius:4px;margin-bottom:6px;user-select:all">SelfloomInvocoDonationSOLAddress00000000000</code>
+        <button class="btn btn-sm btn-outline copy-crypto" data-addr="SelfloomInvocoDonationSOLAddress00000000000" style="width:100%">Copy Address</button>
+        <p style="font-size:0.7rem;color:var(--text-dim);margin-top:6px;text-align:center">Replace with real wallet address</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="app-footer">
+    <p>Invoco — Free time tracking &amp; invoicing for freelancers. No signup. Works offline.</p>
+    <div class="footer-links">
+      <a href="https://write.as/zilafgodxaies" target="_blank" rel="noopener">Landing Page</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="#" onclick="Monetization.openCheckout();return false">Upgrade to Pro ($8/mo)</a>
+      <span class="footer-sep">&middot;</span>
+      <span>v1.3.0 &mdash; Free tier: 3 invoices/month. Crypto donations welcome. Pro waitlist open.</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)Modal.close()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
+<script>
+// ============================================================
+// INV○CO — Freelancer Time Tracker & Invoice Generator
+// ============================================================
+
+const LS = {
+  get(k, fallback) {
+    try { const v = localStorage.getItem('invoco_'+k); return v ? JSON.parse(v) : fallback; }
+    catch(e) { return fallback; }
+  },
+  set(k, v) {
+    try { localStorage.setItem('invoco_'+k, JSON.stringify(v)); }
+    catch(e) { Toast.show('Storage full — export your data and clear some entries.', 'error'); }
+  }
+};
+
+// ===== TOAST =====
+const Toast = {
+  show(msg, type='success') {
+    const el = document.createElement('div');
+    el.className = 'toast '+type;
+    el.textContent = msg;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3000);
+  }
+};
+
+// ===== MODAL =====
+const Modal = {
+  open(html) {
+    document.getElementById('modalContent').innerHTML = html;
+    document.getElementById('modalOverlay').style.display = 'flex';
+  },
+  close() {
+    document.getElementById('modalOverlay').style.display = 'none';
+  }
+};
+
+// ===== SETTINGS =====
+const Settings = {
+  defaults: { bizName:'', email:'', address:'', taxRate:0, currency:'$', terms:'Payment due within 30 days.', nextInvoiceNum:1 },
+  data: {},
+  load() {
+    this.data = LS.get('settings', {...this.defaults});
+    document.getElementById('setBizName').value = this.data.bizName || '';
+    document.getElementById('setEmail').value = this.data.email || '';
+    document.getElementById('setAddress').value = this.data.address || '';
+    document.getElementById('setTaxRate').value = this.data.taxRate ?? 0;
+    document.getElementById('setCurrency').value = this.data.currency || '$';
+    document.getElementById('setTerms').value = this.data.terms || '';
+  },
+  save() {
+    this.data.bizName = document.getElementById('setBizName').value;
+    this.data.email = document.getElementById('setEmail').value;
+    this.data.address = document.getElementById('setAddress').value;
+    this.data.taxRate = parseFloat(document.getElementById('setTaxRate').value) || 0;
+    this.data.currency = document.getElementById('setCurrency').value || '$';
+    this.data.terms = document.getElementById('setTerms').value;
+    LS.set('settings', this.data);
+    Invoices.refreshForm();
+  },
+  nextInvoiceNumber() {
+    const num = this.data.nextInvoiceNum || 1;
+    this.data.nextInvoiceNum = num + 1;
+    LS.set('settings', this.data);
+    return 'INV-' + String(num).padStart(4,'0');
+  },
+  getCurrency() { return this.data.currency || '$'; },
+  getTaxRate() { return this.data.taxRate ?? 0; },
+  getTerms() { return this.data.terms || 'Payment due within 30 days.'; }
+};
+
+// ===== CLIENTS =====
+const Clients = {
+  list: [],
+  load() {
+    this.list = LS.get('clients', []);
+    this.render();
+  },
+  save() { LS.set('clients', this.list); },
+  render() {
+    const container = document.getElementById('clientsList');
+    if (!this.list.length) {
+      container.innerHTML = '<div class="empty-state"><p>No clients yet.</p><button class="btn btn-primary btn-sm" onclick="Clients.showForm()">Add Your First Client</button></div>';
+      return;
+    }
+    let html = '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Company</th><th>Rate</th><th>Email</th><th></th></tr></thead><tbody>';
+    this.list.forEach(c => {
+      html += `<tr>
+        <td><strong>${Util.esc(c.name)}</strong></td>
+        <td>${Util.esc(c.company||'—')}</td>
+        <td>${Settings.getCurrency()}${(c.hourlyRate||0).toFixed(2)}/hr</td>
+        <td>${Util.esc(c.email||'—')}</td>
+        <td style="text-align:right">
+          <button class="btn btn-outline btn-sm" onclick="Clients.showForm('${c.id}')">Edit</button>
+          <button class="btn btn-outline btn-sm" onclick="Clients.remove('${c.id}')" style="color:var(--danger)">Del</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  },
+  showForm(id) {
+    const c = id ? this.list.find(x => x.id === id) : null;
+    let html = `<h3>${c?'Edit':'Add'} Client</h3>`;
+    html += `<div class="form-group"><label>Name *</label><input type="text" id="cfName" value="${Util.esc(c?c.name:'')}"></div>`;
+    html += `<div class="form-row">
+      <div class="form-group"><label>Company</label><input type="text" id="cfCompany" value="${Util.esc(c?c.company:'')}"></div>
+      <div class="form-group"><label>Hourly Rate *</label><input type="number" id="cfRate" min="0" step="0.01" value="${c?c.hourlyRate||0:0}"></div>
+    </div>`;
+    html += `<div class="form-group"><label>Email</label><input type="email" id="cfEmail" value="${Util.esc(c?c.email:'')}"></div>`;
+    html += `<div class="form-group"><label>Address</label><textarea id="cfAddress" rows="2">${Util.esc(c?c.address:'')}</textarea></div>`;
+    html += `<button class="btn btn-primary" onclick="Clients.saveForm('${id||''}')">${c?'Update':'Add'} Client</button>
+      <button class="btn btn-outline btn-sm" onclick="Modal.close()" style="margin-left:8px">Cancel</button>`;
+    Modal.open(html);
+  },
+  saveForm(id) {
+    const name = document.getElementById('cfName').value.trim();
+    const rate = parseFloat(document.getElementById('cfRate').value) || 0;
+    if (!name) { Toast.show('Client name is required.', 'error'); return; }
+    const data = {
+      id: id || 'c'+Date.now(),
+      name,
+      company: document.getElementById('cfCompany').value.trim(),
+      hourlyRate: rate,
+      email: document.getElementById('cfEmail').value.trim(),
+      address: document.getElementById('cfAddress').value.trim()
+    };
+    if (id) {
+      const idx = this.list.findIndex(x => x.id === id);
+      if (idx >= 0) this.list[idx] = data;
+    } else {
+      this.list.push(data);
+    }
+    this.save();
+    this.render();
+    this.refreshDropdowns();
+    Modal.close();
+    Toast.show(id ? 'Client updated.' : 'Client added.');
+  },
+  remove(id) {
+    if (!confirm('Delete this client? Time entries linked to this client will lose their client tag.')) return;
+    this.list = this.list.filter(x => x.id !== id);
+    this.save();
+    this.render();
+    this.refreshDropdowns();
+    Toast.show('Client removed.');
+  },
+  getById(id) { return this.list.find(x => x.id === id) || null; },
+  refreshDropdowns() {
+    const opts = '<option value="">No client selected</option>' + this.list.map(c =>
+      `<option value="${c.id}">${Util.esc(c.name)}${c.company?' ('+Util.esc(c.company)+')':''}</option>`
+    ).join('');
+    document.getElementById('timerClient').innerHTML = opts;
+    document.getElementById('invClient').innerHTML = '<option value="">Select a client</option>' +
+      this.list.map(c => `<option value="${c.id}">${Util.esc(c.name)}</option>`).join('');
+  }
+};
+
+// ===== TIME ENTRIES =====
+const TimeEntries = {
+  list: [],
+  load() {
+    this.list = LS.get('timeEntries', []);
+    this.render();
+  },
+  save() { LS.set('timeEntries', this.list); },
+  add(data) {
+    this.list.unshift(data);
+    this.save();
+    this.render();
+  },
+  update(id, data) {
+    const idx = this.list.findIndex(x => x.id === id);
+    if (idx >= 0) { this.list[idx] = {...this.list[idx], ...data}; this.save(); this.render(); }
+  },
+  remove(id) {
+    if (!confirm('Delete this time entry?')) return;
+    this.list = this.list.filter(x => x.id !== id);
+    this.save();
+    this.render();
+    Invoices.refreshForm();
+  },
+  render() {
+    const container = document.getElementById('timeEntriesList');
+    if (!this.list.length) {
+      container.innerHTML = '<div class="empty-state"><p>No time entries yet. Start tracking or add a manual entry.</p></div>';
+      return;
+    }
+    const recent = this.list.slice(0, 50);
+    let html = '<table><thead><tr><th>Date</th><th>Duration</th><th>Client</th><th>Notes</th><th></th></tr></thead><tbody>';
+    recent.forEach(e => {
+      const c = e.clientId ? Clients.getById(e.clientId) : null;
+      html += `<tr>
+        <td>${Util.formatDate(e.date)}</td>
+        <td class="text-mono">${Util.formatDuration(e.duration)}</td>
+        <td>${c ? '<span class="tag">'+Util.esc(c.name)+'</span>' : '—'}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${Util.esc(e.notes||'—')}</td>
+        <td style="text-align:right">
+          <button class="btn btn-outline btn-sm" onclick="TimeEntries.showEdit('${e.id}')">Edit</button>
+          <button class="btn btn-outline btn-sm" onclick="TimeEntries.remove('${e.id}')" style="color:var(--danger)">Del</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  },
+  showAddManual() {
+    let html = '<h3>Add Manual Time Entry</h3>';
+    html += '<div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="meDate" value="'+Util.today()+'"></div>';
+    html += '<div class="form-group"><label>Duration (hours)</label><input type="number" id="meHours" min="0.01" step="0.01" placeholder="e.g. 2.5"></div></div>';
+    html += '<div class="form-row"><div class="form-group"><label>Client</label><select id="meClient">'+document.getElementById('timerClient').innerHTML+'</select></div>';
+    html += '<div class="form-group"><label>Notes</label><input type="text" id="meNotes" placeholder="What did you work on?"></div></div>';
+    html += '<button class="btn btn-primary" onclick="TimeEntries.saveManual()">Save Entry</button>';
+    html += '<button class="btn btn-outline btn-sm" onclick="Modal.close()" style="margin-left:8px">Cancel</button>';
+    Modal.open(html);
+  },
+  saveManual() {
+    const hours = parseFloat(document.getElementById('meHours').value);
+    if (!hours || hours <= 0) { Toast.show('Enter a valid duration in hours.', 'error'); return; }
+    this.add({
+      id: 'me'+Date.now(),
+      date: document.getElementById('meDate').value || Util.today(),
+      duration: Math.round(hours * 3600),
+      clientId: document.getElementById('meClient').value || null,
+      notes: document.getElementById('meNotes').value.trim(),
+      billed: false
+    });
+    Modal.close();
+    Toast.show('Manual entry added.');
+  },
+  showEdit(id) {
+    const e = this.list.find(x => x.id === id);
+    if (!e) return;
+    const hours = (e.duration / 3600).toFixed(2);
+    let html = '<h3>Edit Time Entry</h3>';
+    html += '<div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="eeDate" value="'+e.date+'"></div>';
+    html += '<div class="form-group"><label>Duration (hours)</label><input type="number" id="eeHours" min="0.01" step="0.01" value="'+hours+'"></div></div>';
+    html += '<div class="form-row"><div class="form-group"><label>Client</label><select id="eeClient">'+document.getElementById('timerClient').innerHTML.replace('value="'+e.clientId+'"','value="'+e.clientId+'" selected')+'</select></div>';
+    html += '<div class="form-group"><label>Notes</label><input type="text" id="eeNotes" value="'+Util.escAttr(e.notes||'')+'"></div></div>';
+    html += '<button class="btn btn-primary" onclick="TimeEntries.saveEdit(\''+id+'\')">Update</button>';
+    html += '<button class="btn btn-outline btn-sm" onclick="Modal.close()" style="margin-left:8px">Cancel</button>';
+    Modal.open(html);
+  },
+  saveEdit(id) {
+    const hours = parseFloat(document.getElementById('eeHours').value);
+    if (!hours || hours <= 0) { Toast.show('Enter a valid duration.', 'error'); return; }
+    this.update(id, {
+      date: document.getElementById('eeDate').value,
+      duration: Math.round(hours * 3600),
+      clientId: document.getElementById('eeClient').value || null,
+      notes: document.getElementById('eeNotes').value.trim()
+    });
+    Modal.close();
+    Toast.show('Entry updated.');
+  },
+  getUnbilled(clientId) {
+    return this.list.filter(e => !e.billed && (!clientId || e.clientId === clientId));
+  }
+};
+
+// ===== TIMER =====
+const Timer = {
+  state: 'idle', // idle | running
+  startTime: null,
+  elapsed: 0,
+  interval: null,
+  clientId: null,
+  notes: '',
+  init() {
+    const saved = LS.get('timerState', null);
+    if (saved && saved.state === 'running') {
+      this.state = 'running';
+      this.startTime = saved.startTime;
+      this.elapsed = saved.elapsed || 0;
+      this.clientId = saved.clientId || null;
+      this.notes = saved.notes || '';
+      this.startInterval();
+      this.updateUI();
+    }
+  },
+  persist() {
+    LS.set('timerState', {
+      state: this.state,
+      startTime: this.startTime,
+      elapsed: this.elapsed,
+      clientId: this.clientId,
+      notes: this.notes
+    });
+  },
+  start() {
+    this.state = 'running';
+    this.startTime = Date.now();
+    this.clientId = document.getElementById('timerClient').value || null;
+    this.notes = document.getElementById('timerNotes').value.trim();
+    this.startInterval();
+    this.updateUI();
+    this.persist();
+  },
+  stop() {
+    if (this.state !== 'running') return;
+    const duration = Math.round((Date.now() - this.startTime + this.elapsed) / 1000);
+    this.state = 'idle';
+    this.startTime = null;
+    this.elapsed = 0;
+    this.stopInterval();
+    if (duration > 0) {
+      TimeEntries.add({
+        id: 'te'+Date.now(),
+        date: Util.today(),
+        duration,
+        clientId: this.clientId,
+        notes: this.notes,
+        billed: false
+      });
+    }
+    this.clientId = null;
+    this.notes = '';
+    document.getElementById('timerClient').value = '';
+    document.getElementById('timerNotes').value = '';
+    this.updateUI();
+    this.persist();
+    document.getElementById('timerDisplay').textContent = '00:00:00';
+  },
+  startInterval() {
+    this.stopInterval();
+    this.interval = setInterval(() => {
+      const total = this.elapsed + (Date.now() - this.startTime);
+      document.getElementById('timerDisplay').textContent = Util.formatMs(total);
+    }, 200);
+  },
+  stopInterval() {
+    if (this.interval) { clearInterval(this.interval); this.interval = null; }
+  },
+  updateUI() {
+    const running = this.state === 'running';
+    document.getElementById('btnStart').disabled = running;
+    document.getElementById('btnStop').disabled = !running;
+    const display = document.getElementById('timerDisplay');
+    if (running) {
+      display.classList.add('running');
+      display.textContent = Util.formatMs(this.elapsed + (Date.now() - this.startTime));
+    } else {
+      display.classList.remove('running');
+    }
+    document.getElementById('timerClient').disabled = running;
+    if (running) {
+      document.getElementById('timerClient').value = this.clientId || '';
+      document.getElementById('timerNotes').value = this.notes;
+    }
+  },
+  setClient(v) { if (this.state !== 'running') this.clientId = v || null; },
+  setNotes(v) { if (this.state !== 'running') this.notes = v; }
+};
+
+// ===== INVOICES =====
+const Invoices = {
+  list: [],
+  selectedEntries: {},
+  lineItems: [],
+  load() {
+    this.list = LS.get('invoices', []);
+    this.renderHistory();
+  },
+  save() { LS.set('invoices', this.list); },
+  initForm() {
+    document.getElementById('invDate').value = Util.today();
+    const due = new Date(); due.setDate(due.getDate() + 30);
+    document.getElementById('invDueDate').value = Util.dtToDate(due);
+    document.getElementById('invNumber').value = Settings.nextInvoiceNumber();
+    document.getElementById('invNotes').value = Settings.getTerms();
+    this.selectedEntries = {};
+    this.lineItems = [];
+    this.refreshForm();
+  },
+  onClientChange() {
+    this.selectedEntries = {};
+    this.refreshForm();
+  },
+  refreshForm() {
+    const clientId = document.getElementById('invClient').value;
+    // Time entries
+    const entries = TimeEntries.getUnbilled(clientId);
+    let html = '';
+    if (!clientId) {
+      html = '<p style="color:var(--text-dim);font-size:0.9rem">Select a client to see unbilled time entries.</p>';
+    } else if (!entries.length) {
+      html = '<p style="color:var(--text-dim);font-size:0.9rem">No unbilled time entries for this client.</p>';
+    } else {
+      entries.forEach(e => {
+        const hours = (e.duration/3600).toFixed(2);
+        const checked = this.selectedEntries[e.id] ? 'checked' : '';
+        html += `<label class="check-label" style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <input type="checkbox" ${checked} onchange="Invoices.toggleEntry('${e.id}', this.checked)">
+          <span>${Util.formatDate(e.date)} — ${hours}h — ${Util.esc(e.notes||'No notes')}</span>
+        </label>`;
+      });
+    }
+    document.getElementById('invTimeEntries').innerHTML = html;
+    // Line items
+    this.renderLineItems();
+    // Totals
+    this.calcTotals();
+  },
+  toggleEntry(id, checked) {
+    if (checked) this.selectedEntries[id] = true;
+    else delete this.selectedEntries[id];
+    this.calcTotals();
+  },
+  addLineItem() {
+    this.lineItems.push({ id:'li'+Date.now(), description:'', qty:1, rate:0 });
+    this.renderLineItems();
+  },
+  removeLineItem(id) {
+    this.lineItems = this.lineItems.filter(x => x.id !== id);
+    this.renderLineItems();
+    this.calcTotals();
+  },
+  renderLineItems() {
+    const container = document.getElementById('invLineItems');
+    if (!this.lineItems.length) {
+      container.innerHTML = '<p style="color:var(--text-dim);font-size:0.9rem">No additional line items.</p>';
+      return;
+    }
+    let html = '';
+    this.lineItems.forEach((li, i) => {
+      html += `<div class="form-row" style="align-items:end;margin-bottom:8px">
+        <div class="form-group" style="margin:0"><input type="text" placeholder="Description" value="${Util.escAttr(li.description)}" onchange="Invoices.updateLineItem('${li.id}','description',this.value)" style="width:100%"></div>
+        <div class="form-group" style="margin:0"><input type="number" placeholder="Qty" value="${li.qty}" min="1" step="1" onchange="Invoices.updateLineItem('${li.id}','qty',parseFloat(this.value)||0)" style="width:70px"></div>
+        <div class="form-group" style="margin:0"><input type="number" placeholder="Rate" value="${li.rate||''}" min="0" step="0.01" onchange="Invoices.updateLineItem('${li.id}','rate',parseFloat(this.value)||0)" style="width:100px"></div>
+        <button class="btn btn-outline btn-sm" onclick="Invoices.removeLineItem('${li.id}')" style="color:var(--danger);margin-bottom:0">&times;</button>
+      </div>`;
+    });
+    container.innerHTML = html;
+  },
+  updateLineItem(id, field, value) {
+    const li = this.lineItems.find(x => x.id === id);
+    if (li) { li[field] = value; this.calcTotals(); }
+  },
+  calcTotals() {
+    const clientId = document.getElementById('invClient').value;
+    const client = Clients.getById(clientId);
+    const rate = client ? client.hourlyRate : 0;
+    const currency = Settings.getCurrency();
+    const taxRate = Settings.getTaxRate();
+    document.getElementById('invTaxRate').textContent = taxRate;
+
+    let subtotal = 0;
+    // Time entries
+    Object.keys(this.selectedEntries).forEach(entryId => {
+      const e = TimeEntries.list.find(x => x.id === entryId);
+      if (e) subtotal += (e.duration / 3600) * rate;
+    });
+    // Line items
+    this.lineItems.forEach(li => {
+      subtotal += (li.qty || 0) * (li.rate || 0);
+    });
+
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax;
+
+    document.getElementById('invSubtotal').textContent = currency + subtotal.toFixed(2);
+    document.getElementById('invTax').textContent = currency + tax.toFixed(2);
+    document.getElementById('invTotal').textContent = currency + total.toFixed(2);
+  },
+  generate() {
+    const clientId = document.getElementById('invClient').value;
+    const client = Clients.getById(clientId);
+    if (!client) { Toast.show('Select a client first.', 'error'); return; }
+    const entryIds = Object.keys(this.selectedEntries);
+    if (!entryIds.length && !this.lineItems.length) {
+      Toast.show('Select at least one time entry or add a line item.', 'error'); return;
+    }
+
+    // Free tier limit check
+    if (!Monetization.checkLimit()) {
+      Monetization.showUpgradeBanner();
+      Toast.show('Free tier: 3 invoices/month. Upgrade to Pro for unlimited.', 'error');
+      return;
+    }
+
+    const taxRate = Settings.getTaxRate();
+    const currency = Settings.getCurrency();
+    const invNumber = document.getElementById('invNumber').value;
+    const invDate = document.getElementById('invDate').value;
+    const invDueDate = document.getElementById('invDueDate').value;
+    const invNotes = document.getElementById('invNotes').value;
+    const settings = Settings.data;
+
+    // Build items
+    const items = [];
+    let subtotal = 0;
+    entryIds.forEach(entryId => {
+      const e = TimeEntries.list.find(x => x.id === entryId);
+      if (e) {
+        const hours = e.duration / 3600;
+        const amount = hours * client.hourlyRate;
+        subtotal += amount;
+        items.push({ description: `Time entry — ${Util.formatDate(e.date)}${e.notes?' — '+e.notes:''}`, qty: hours.toFixed(2), rate: client.hourlyRate, amount });
+      }
+    });
+    this.lineItems.forEach(li => {
+      if (li.description && li.qty > 0) {
+        const amount = li.qty * li.rate;
+        subtotal += amount;
+        items.push({ description: li.description, qty: li.qty, rate: li.rate, amount });
+      }
+    });
+
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax;
+
+    // Mark entries as billed
+    entryIds.forEach(id => TimeEntries.update(id, { billed: true }));
+
+    // Save invoice
+    const invoice = {
+      id: 'inv'+Date.now(),
+      number: invNumber,
+      clientId,
+      clientName: client.name,
+      clientCompany: client.company,
+      clientEmail: client.email,
+      clientAddress: client.address,
+      date: invDate,
+      dueDate: invDueDate,
+      items,
+      subtotal,
+      taxRate,
+      tax,
+      total,
+      notes: invNotes,
+      currency,
+      status: 'open'
+    };
+    this.list.unshift(invoice);
+    this.save();
+    this.renderHistory();
+
+    // Show preview
+    this.showPreview(invoice);
+    this.initForm();
+    Clients.refreshDropdowns();
+    TimeEntries.render();
+    Toast.show('Invoice generated! Scroll down to print.');
+  },
+  showPreview(invoice) {
+    const container = document.getElementById('invoicePreview');
+    let itemsHtml = invoice.items.map(item => `
+      <tr>
+        <td>${Util.esc(item.description)}</td>
+        <td class="num">${item.qty}</td>
+        <td class="num">${invoice.currency}${item.rate.toFixed(2)}</td>
+        <td class="num">${invoice.currency}${item.amount.toFixed(2)}</td>
+      </tr>`).join('');
+
+    let html = `<div class="invoice-preview" id="printableInvoice">
+      <h2>INVOICE</h2>
+      <div class="invoice-meta">
+        <div class="col">
+          <div class="label">From</div>
+          <div class="value">
+            <strong>${Util.esc(invoice.bizName||Settings.data.bizName||'Your Business')}</strong><br>
+            ${Util.esc(invoice.bizAddress||Settings.data.address||'')}${Settings.data.email?'<br>'+Util.esc(Settings.data.email):''}
+          </div>
+        </div>
+        <div class="col">
+          <div class="label">To</div>
+          <div class="value">
+            <strong>${Util.esc(invoice.clientName)}</strong>${invoice.clientCompany?'<br>'+Util.esc(invoice.clientCompany):''}<br>
+            ${Util.esc(invoice.clientAddress||'')}${invoice.clientEmail?'<br>'+Util.esc(invoice.clientEmail):''}
+          </div>
+        </div>
+      </div>
+      <div class="invoice-meta">
+        <div class="col">
+          <div class="label">Invoice Number</div>
+          <div class="value"><strong>${Util.esc(invoice.number)}</strong></div>
+        </div>
+        <div class="col">
+          <div class="label">Dates</div>
+          <div class="value">
+            Issued: ${Util.formatDate(invoice.date)}<br>
+            Due: ${Util.formatDate(invoice.dueDate)}
+          </div>
+        </div>
+      </div>
+      <table class="invoice-table">
+        <thead><tr><th>Description</th><th class="num">Qty/Hrs</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+      <div class="invoice-totals">
+        <div class="row"><span>Subtotal</span><span>${invoice.currency}${invoice.subtotal.toFixed(2)}</span></div>
+        <div class="row"><span>Tax (${invoice.taxRate}%)</span><span>${invoice.currency}${invoice.tax.toFixed(2)}</span></div>
+        <div class="row total"><span>Total Due</span><span>${invoice.currency}${invoice.total.toFixed(2)}</span></div>
+      </div>
+      ${invoice.notes ? '<div class="invoice-notes"><strong>Notes / Payment Terms</strong><br>'+Util.esc(invoice.notes)+'</div>' : ''}
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px" class="no-print">
+      <button class="btn btn-primary" onclick="window.print()">Print Invoice</button>
+      <button class="btn btn-outline btn-sm" onclick="Invoices.markPaid('${invoice.id}')">Mark as Paid</button>
+    </div>`;
+    container.innerHTML = html;
+    container.scrollIntoView({ behavior:'smooth' });
+  },
+  clearForm() {
+    document.getElementById('invClient').value = '';
+    this.selectedEntries = {};
+    this.lineItems = [];
+    this.initForm();
+  },
+  markPaid(id) {
+    const inv = this.list.find(x => x.id === id);
+    if (inv) { inv.status = 'paid'; this.save(); this.renderHistory(); Toast.show('Invoice marked as paid.'); }
+  },
+  removeInvoice(id) {
+    if (!confirm('Delete this invoice? This will NOT unbill time entries.')) return;
+    this.list = this.list.filter(x => x.id !== id);
+    this.save();
+    this.renderHistory();
+    Toast.show('Invoice removed.');
+  },
+  renderHistory() {
+    const container = document.getElementById('invoiceHistory');
+    if (!this.list.length) {
+      container.innerHTML = '<div class="empty-state"><p>No invoices yet.</p></div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>';
+    this.list.forEach(inv => {
+      html += `<tr>
+        <td><strong>${Util.esc(inv.number)}</strong></td>
+        <td>${Util.esc(inv.clientName)}</td>
+        <td>${Util.formatDate(inv.date)}</td>
+        <td>${inv.currency}${inv.total.toFixed(2)}</td>
+        <td><span class="${inv.status==='paid'?'status-paid':'status-open'}">${inv.status}</span></td>
+        <td style="text-align:right">
+          <button class="btn btn-outline btn-sm" onclick="Invoices.viewInvoice('${inv.id}')">View</button>
+          <button class="btn btn-outline btn-sm" onclick="Invoices.removeInvoice('${inv.id}')" style="color:var(--danger)">Del</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  },
+  viewInvoice(id) {
+    const inv = this.list.find(x => x.id === id);
+    if (!inv) return;
+    inv.bizName = Settings.data.bizName;
+    inv.bizAddress = Settings.data.address;
+    this.showPreview(inv);
+  }
+};
+
+// ===== DATA MANAGER =====
+const DataManager = {
+  exportData() {
+    const data = {
+      clients: Clients.list,
+      timeEntries: TimeEntries.list,
+      invoices: Invoices.list,
+      settings: Settings.data,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoco-backup-'+Util.today()+'.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    Toast.show('Data exported. Keep this file safe!');
+  },
+  importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.clients || !data.timeEntries || !data.invoices || !data.settings) {
+          throw new Error('Invalid backup format');
+        }
+        if (!confirm('Import will REPLACE all current data. Continue?')) return;
+        LS.set('clients', data.clients);
+        LS.set('timeEntries', data.timeEntries);
+        LS.set('invoices', data.invoices);
+        LS.set('settings', data.settings);
+        location.reload();
+      } catch(err) {
+        Toast.show('Invalid backup file. Import failed.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  },
+  showClearConfirm() {
+    const container = document.getElementById('clearConfirm');
+    container.innerHTML = `<div class="confirm-dialog">
+      <p><strong>Delete all data?</strong> This removes all clients, time entries, invoices, and settings. This cannot be undone.</p>
+      <div class="btns">
+        <button class="btn btn-danger btn-sm" onclick="DataManager.clearAll()">Yes, Delete Everything</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('clearConfirm').innerHTML=''">Cancel</button>
+      </div>
+    </div>`;
+    container.style.display = 'block';
+  },
+  clearAll() {
+    ['clients','timeEntries','invoices','settings','timerState'].forEach(k => {
+      try { localStorage.removeItem('invoco_'+k); } catch(e) {}
+    });
+    location.reload();
+  }
+};
+
+// ===== MONETIZATION =====
+const Monetization = {
+  FREE_LIMIT: 3,
+  checkoutUrl: '', // Set when payment processing is configured
+  init() {
+    this.checkLimit();
+    this.syncWaitlistUI();
+  },
+  syncWaitlistUI() {
+    const btn = document.getElementById('upgradeBtn');
+    const form = document.getElementById('waitlistForm');
+    const success = document.getElementById('waitlistSuccess');
+    if (this.checkoutUrl) {
+      if (btn) btn.style.display = '';
+      if (form) form.classList.remove('show');
+      if (success) success.classList.remove('show');
+    } else {
+      if (btn) btn.style.display = 'none';
+      this.showWaitlistFormIfNotSubmitted();
+    }
+  },
+  showWaitlistFormIfNotSubmitted() {
+    const form = document.getElementById('waitlistForm');
+    const success = document.getElementById('waitlistSuccess');
+    const submitted = localStorage.getItem('invoco_waitlist_submitted');
+    if (submitted) {
+      if (form) form.classList.remove('show');
+      if (success) success.classList.add('show');
+    } else {
+      if (form) form.classList.add('show');
+      if (success) success.classList.remove('show');
+    }
+  },
+  countInvoicesThisMonth() {
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    return Invoices.list.filter(inv => {
+      try { return inv.date && inv.date.startsWith(monthKey); }
+      catch(e) { return false; }
+    }).length;
+  },
+  checkLimit() {
+    const count = this.countInvoicesThisMonth();
+    const banner = document.getElementById('upgradeBanner');
+    if (count >= this.FREE_LIMIT) {
+      this.showUpgradeBanner();
+    }
+    return count < this.FREE_LIMIT;
+  },
+  showUpgradeBanner() {
+    const banner = document.getElementById('upgradeBanner');
+    if (banner) { banner.classList.add('show'); this.syncWaitlistUI(); }
+  },
+  hideUpgradeBanner() {
+    const banner = document.getElementById('upgradeBanner');
+    if (banner) banner.classList.remove('show');
+  },
+  openCheckout() {
+    if (this.checkoutUrl) {
+      window.open(this.checkoutUrl, '_blank');
+    } else {
+      this.showUpgradeBanner();
+      const form = document.getElementById('waitlistForm');
+      if (form && !form.classList.contains('show')) {
+        form.classList.add('show');
+        document.getElementById('waitlistEmail').focus();
+      }
+    }
+  },
+  submitWaitlist() {
+    const email = document.getElementById('waitlistEmail').value.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      Toast.show('Please enter a valid email address', 'error');
+      return;
+    }
+    const leads = JSON.parse(localStorage.getItem('invoco_leads') || '[]');
+    leads.push({ email, ts: new Date().toISOString(), source: 'upgrade-wall' });
+    localStorage.setItem('invoco_leads', JSON.stringify(leads));
+    localStorage.setItem('invoco_waitlist_submitted', 'true');
+    document.getElementById('waitlistForm').classList.remove('show');
+    document.getElementById('waitlistSuccess').classList.add('show');
+    Toast.show('You are on the list! We will email you when Pro launches.', 'success');
+  },
+  getLeads() {
+    return JSON.parse(localStorage.getItem('invoco_leads') || '[]');
+  },
+  exportLeads() {
+    const leads = this.getLeads();
+    if (leads.length === 0) { Toast.show('No leads yet', 'error'); return; }
+    const csv = 'email,timestamp,source\n' + leads.map(l => l.email + ',' + l.ts + ',' + l.source).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'invoco-leads-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    Toast.show('Exported ' + leads.length + ' leads', 'success');
+  }
+};
+
+// ===== UTILITIES =====
+const Util = {
+  esc(s) { if (!s) return ''; const d=document.createElement('div');d.textContent=s;return d.innerHTML; },
+  escAttr(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); },
+  today() { return new Date().toISOString().slice(0,10); },
+  dtToDate(dt) { return dt.toISOString().slice(0,10); },
+  formatDate(d) {
+    if (!d) return '—';
+    try { const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); }
+    catch(e) { return d; }
+  },
+  formatDuration(seconds) {
+    const h=Math.floor(seconds/3600), m=Math.floor((seconds%3600)/60), s=seconds%60;
+    return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  },
+  formatMs(ms) {
+    const total=Math.floor(ms/1000);
+    return Util.formatDuration(total);
+  }
+};
+
+// ===== TABS =====
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display='none');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelector('nav button[data-tab="'+name+'"]').classList.add('active');
+  if (name === 'invoices') Invoices.refreshForm();
+  if (name === 'clients') Clients.render();
+  if (name === 'settings') { Settings.load(); refreshLeadCount(); }
+}
+
+function refreshLeadCount() {
+  const leads = Monetization.getLeads();
+  const el = document.getElementById('leadCount');
+  if (el) el.textContent = leads.length;
+}
+
+// ===== INIT =====
+function init() {
+  Settings.load();
+  Clients.load();
+  TimeEntries.load();
+  Invoices.load();
+  Clients.refreshDropdowns();
+  Invoices.initForm();
+  Monetization.init();
+  refreshLeadCount();
+  Timer.init();
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+
+  // Tab navigation
+  document.querySelectorAll('nav button').forEach(btn => {
+    btn.addEventListener('click', () => showTab(btn.dataset.tab));
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.code === 'Space' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      if (Timer.state === 'running') Timer.stop(); else Timer.start();
+    }
+  });
+}
+
+// Crypto donation copy buttons
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.copy-crypto');
+  if (!btn) return;
+  const addr = btn.dataset.addr;
+  navigator.clipboard.writeText(addr).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.background = '#059669';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#059669';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  }).catch(() => {
+    // Fallback for non-HTTPS
+    const ta = document.createElement('textarea');
+    ta.value = addr; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy Address'; }, 2000);
+  });
+});
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
